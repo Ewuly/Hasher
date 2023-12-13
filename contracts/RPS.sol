@@ -26,10 +26,10 @@ contract RPS {
      *  @param _c2 The move submitted by j2.
      */
     function play(Move _c2) external payable {
-        require(c2 == Move.Null); // J2 has not played yet.
-        require(_c2 != Move.Null); // A move is selected.
-        require(msg.value == stake); // J2 has paid the stake.
-        require(msg.sender == j2); // Only j2 can call this function.
+        require(c2 == Move.Null, "Move is already played"); // J2 has not played yet.
+        require(_c2 != Move.Null, "Move is null"); // A move is selected.
+        require(msg.value == stake, "J2 didn't pay the same amount"); // J2 has paid the stake.
+        require(msg.sender == j2, "Player is not J2"); // Only j2 can call this function.
 
         c2 = _c2;
         lastAction = block.timestamp;
@@ -40,11 +40,11 @@ contract RPS {
      *  @param _salt The salt used when submitting the commitment when the constructor was called.
      */
     function solve(Move _c1, uint256 _salt) external {
-        require(_c1 != Move.Null); // J1 should have made a valid move.
-        require(c2 != Move.Null); // J2 must have played.
+        require(_c1 != Move.Null, "J1 move is not valid"); // J1 should have made a valid move.
+        require(c2 != Move.Null, "J2 has not played yet"); // J2 must have played.
 
-        require(msg.sender == j1); // J1 can call this.
-        require(keccak256(abi.encodePacked(_c1, _salt)) == c1Hash); // Verify the value is the committed one.
+        require(msg.sender == j1, "Caller is not J1"); // J1 can call this.
+        require(keccak256(abi.encodePacked(_c1, _salt)) == c1Hash, "Hash is not the move"); // Verify the value is the committed one.
 
         // If j1 or j2 throws at fallback it won't get funds and that is his fault.
         // Despite what the warnings say, we should not use transfer as a throwing fallback would be able to block the contract, in case of tie.
@@ -57,13 +57,14 @@ contract RPS {
             payable(j2).transfer(stake);
         }
         stake = 0;
+        c2 = Move.Null;
     }
 
     /** @dev Let j2 get the funds back if j1 did not play.
      */
     function j1Timeout() external {
-        require(c2 != Move.Null); // J2 already played.
-        require(block.timestamp > lastAction + TIMEOUT); // Timeout time has passed.
+        require(c2 != Move.Null, "J2 has not played yet"); // J2 already played.
+        require(block.timestamp > lastAction + TIMEOUT, "Time is not out"); // Timeout time has passed.
         payable(j2).transfer(2 * stake);
         stake = 0;
     }
@@ -71,8 +72,8 @@ contract RPS {
     /** @dev Let j1 take back the funds if j2 never played.
      */
     function j2Timeout() external {
-        require(c2 == Move.Null); // J2 has not played.
-        require(block.timestamp > lastAction + TIMEOUT); // Timeout time has passed.
+        require(c2 == Move.Null, "J2 has played"); // J2 has not played.
+        require(block.timestamp > lastAction + TIMEOUT, "Time is not out"); // Timeout time has passed.
         payable(j1).transfer(stake);
         stake = 0;
     }
