@@ -15,6 +15,7 @@ contract RPS {
     uint256 public gameId = 0;
     uint256 public TIMEOUT = 5 minutes;
     
+    
     function createGame(bytes32 _c1Hash, address _j2) external payable {
         games[gameId] = Game({
             j1: msg.sender,
